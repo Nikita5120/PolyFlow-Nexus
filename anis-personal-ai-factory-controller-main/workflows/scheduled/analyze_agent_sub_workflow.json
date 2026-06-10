@@ -1,0 +1,544 @@
+{
+  "name": "ANALYZE Agent Sub-Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "YOUR_ID",
+      "typeVersion": 1.1,
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        1008,
+        1056
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1632,
+        1056
+      ],
+      "id": "YOUR_ID",
+      "name": "Split In Batches \u2014 FOR EACH CLEAN FILE"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $binary.data.mimeType }}",
+                    "rightValue": "text/csv",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "YOUR_ID"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "YOUR_ID",
+                    "leftValue": "={{ $binary.data.mimeType }}",
+                    "rightValue": "application/json",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "YOUR_ID",
+                    "leftValue": "={{ $binary.data.mimeType }}",
+                    "rightValue": "text/plain",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        2192,
+        1200
+      ],
+      "id": "YOUR_ID",
+      "name": "Switch \u2014 File Type (by mimeType)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// YOUR_ID\n// PERSONAL AI FACTORY v1 \u2014 KPI ENGINE\n// Input: An array of JSON rows from CLEAN (CSV + JSON only)\n// TXT files are ignored because they never reach this node\n// YOUR_ID\n\nconst rows = items.map(i => i.json);\n\n// If no rows (e.g., only TXT in CLEAN), produce empty KPIs\nif (rows.length === 0) {\n  const kpis = {\n    win_rate: 0,\n    avg_margin: 0,\n    aging_days: 0,\n    count_rows: 0\n  };\n\n  const csvRows = [\n    { metric: 'win_rate', value: 0 },\n    { metric: 'avg_margin', value: 0 },\n    { metric: 'aging_days', value: 0 },\n    { metric: 'count_rows', value: 0 }\n  ];\n\n  return [{ json: { kpis, csvRows, summary: \"No structured rows available for KPI computation.\" }}];\n}\n\n// YOUR_ID\n// Helpers\n// YOUR_ID\nconst parseNumber = (value) => {\n  if (value === undefined || value === null || value === \"\") return null;\n  const cleaned = String(value).replace(/[,\u20b9$]/g, '').trim();\n  const num = Number(cleaned);\n  return Number.isFinite(num) ? num : null;\n};\n\nconst parseDate = (value) => {\n  if (!value) return null;\n  const d = new Date(value);\n  return isNaN(d) ? null : d;\n};\n\n// Flexible mapping to handle different column names\nconst mapCol = (row, names) => {\n  for (const n of names) {\n    if (row[n] !== undefined && row[n] !== null && row[n] !== \"\") {\n      return row[n];\n    }\n  }\n  return null;\n};\n\n// YOUR_ID\n// Normalize rows\n// YOUR_ID\nconst normalized = rows.map(r => {\n  return {\n    status: (mapCol(r, ['status', 'state', 'result']) || \"\").toString().toLowerCase(),\n    revenue: parseNumber(mapCol(r, ['revenue', 'amount', 'sale_value', 'price'])),\n    cost: parseNumber(mapCol(r, ['cost', 'expense', 'cogs'])),\n    created_at: parseDate(mapCol(r, ['created_at', 'created', 'date', 'timestamp']))\n  };\n});\n\n// YOUR_ID\n// Compute KPIs\n// YOUR_ID\n\n// Win Rate\nconst total = normalized.length;\nconst wins = normalized.filter(r =>\n  r.status === 'won' ||\n  r.status === 'closed-won' ||\n  r.status === 'success'\n).length;\nconst win_rate = total > 0 ? wins / total : 0;\n\n// Average Margin\nconst margins = normalized\n  .map(r => (r.revenue && r.cost !== null && r.revenue !== 0)\n    ? (r.revenue - r.cost) / r.revenue\n    : null)\n  .filter(v => v !== null);\n\nconst avg_margin = margins.length > 0\n  ? margins.reduce((a, b) => a + b, 0) / margins.length\n  : 0;\n\n// Aging Days\nconst now = new Date();\nconst daysBetween = (a, b) => Math.round((b - a) / (1000 * 60 * 60 * 24));\n\nconst ages = normalized\n  .map(r => r.created_at ? daysBetween(r.created_at, now) : null)\n  .filter(v => v !== null);\n\nconst aging_days = ages.length > 0\n  ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length)\n  : 0;\n\n// YOUR_ID\n// Output dataset for CSV\n// YOUR_ID\nconst csvRows = [\n  { metric: \"win_rate\", value: win_rate },\n  { metric: \"avg_margin\", value: avg_margin },\n  { metric: \"aging_days\", value: aging_days },\n  { metric: \"count_rows\", value: total }\n];\n\n// YOUR_ID\n// Final Output\n// YOUR_ID\nconst summary = `Computed ${total} structured rows \u2192 win_rate=${(win_rate * 100).toFixed(1)}%, avg_margin=${(avg_margin * 100).toFixed(1)}%, aging_days=${aging_days}`;\n\nreturn [{\n  json: {\n    kpis: {\n      win_rate,\n      avg_margin,\n      aging_days,\n      count_rows: total\n    },\n    csvRows,\n    summary\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2928,
+        1040
+      ],
+      "id": "YOUR_ID",
+      "name": "Function Node \u2014 Compute KPIs"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        2464,
+        1136
+      ],
+      "id": "YOUR_ID",
+      "name": "Extract from CSV File"
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        2464,
+        1344
+      ],
+      "id": "YOUR_ID",
+      "name": "Extract from JSON File"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2768,
+        1376
+      ],
+      "id": "YOUR_ID",
+      "name": "Merge \u2014 Structured Data (CSV + JSON Rows)"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        3216,
+        1120
+      ],
+      "id": "YOUR_ID",
+      "name": "Convert to CSV File"
+    },
+    {
+      "parameters": {
+        "content": "ANALYZE Agent\n",
+        "height": 768,
+        "width": 3248
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        752,
+        896
+      ],
+      "typeVersion": 1,
+      "id": "YOUR_ID",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "'YOUR_CLEAN_FOLDER_ID' in parents",
+        "returnAll": true,
+        "filter": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1328,
+        1056
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Drive \u2014 List Files (CLEAN folder)",
+      "executeOnce": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_ID",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1936,
+        1216
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Drive \u2014 Download CLEAN file 2",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "kpi.csv",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_ID",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        3504,
+        1216
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Drive \u2014 Upload File (to GOLD folder)",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_ID",
+          "mode": "list",
+          "cachedResultName": "AI_Factory_Control",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "EVENT_LOG",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit#gid=2072862873"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ts": "={{ $now }}",
+            "agent": "analyze",
+            "input": "={{ $node[\"Google Drive \u2014 Upload File (to GOLD folder)\"].json[\"name\"] }}",
+            "output": "={{$node[\"Google Drive \u2014 Upload File (to GOLD folder)\"].json[\"webViewLink\"]}}",
+            "status": "success",
+            "action": "compute_kpis",
+            "notes": "Unified KPI CSV file generated and uploaded to GOLD folder"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ts",
+              "displayName": "ts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "agent",
+              "displayName": "agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "input",
+              "displayName": "input",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "output",
+              "displayName": "output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3776,
+        1344
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Sheets \u2014 Append EVENT_LOG (analzye_success)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Google Drive \u2014 List Files (CLEAN folder)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches \u2014 FOR EACH CLEAN FILE": {
+      "main": [
+        [
+          {
+            "node": "Function Node \u2014 Compute KPIs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive \u2014 Download CLEAN file 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch \u2014 File Type (by mimeType)": {
+      "main": [
+        [
+          {
+            "node": "Extract from CSV File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from JSON File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Split In Batches \u2014 FOR EACH CLEAN FILE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function Node \u2014 Compute KPIs": {
+      "main": [
+        [
+          {
+            "node": "Convert to CSV File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from CSV File": {
+      "main": [
+        [
+          {
+            "node": "Merge \u2014 Structured Data (CSV + JSON Rows)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from JSON File": {
+      "main": [
+        [
+          {
+            "node": "Merge \u2014 Structured Data (CSV + JSON Rows)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge \u2014 Structured Data (CSV + JSON Rows)": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches \u2014 FOR EACH CLEAN FILE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to CSV File": {
+      "main": [
+        [
+          {
+            "node": "Google Drive \u2014 Upload File (to GOLD folder)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive \u2014 List Files (CLEAN folder)": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches \u2014 FOR EACH CLEAN FILE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive \u2014 Download CLEAN file 2": {
+      "main": [
+        [
+          {
+            "node": "Switch \u2014 File Type (by mimeType)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive \u2014 Upload File (to GOLD folder)": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets \u2014 Append EVENT_LOG (analzye_success)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "YOUR_ID",
+  "meta": {
+    "instanceId": "YOUR_N8N_INSTANCE_ID"
+  },
+  "id": "31KoZPAfZNIKGOtE",
+  "tags": []
+}

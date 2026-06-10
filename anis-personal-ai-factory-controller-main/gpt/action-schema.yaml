@@ -1,0 +1,78 @@
+openapi: 3.1.0
+info:
+  title: ANIS Hub
+  version: 1.0.0
+
+servers:
+  - url: PRODUCTION_N8N_WORKFLOW_URL 
+
+paths:
+  /webhook/anis:
+    post:
+      operationId: anisCommand
+      description: Dispatch command to n8n (ingest | clean | analyze | report)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                agent:
+                  type: string
+                  enum:
+                    - ingest
+                    - clean
+                    - analyze
+                    - report
+
+                source:
+                  type: object
+                  properties:
+                    gmailQuery:
+                      type: string
+                    days:
+                      type: integer
+                      default: 7
+
+                options:
+                  type: object
+                  properties:
+                    attachmentsOnly:
+                      type: boolean
+                      default: true
+                    fileTypes:
+                      type: array
+                      items:
+                        type: string
+
+                return:
+                  type: string
+                  enum:
+                    - summary
+                    - kpis
+                    - log
+                    - files
+                  default: summary
+
+              required:
+                - agent
+
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  summary:
+                    type: string
+                  kpis:
+                    type: object
+                  links:
+                    type: array
+                    items:
+                      type: string

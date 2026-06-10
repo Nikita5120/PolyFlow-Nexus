@@ -1,0 +1,1 @@
+A Personal AI Factory controller that sends one JSON command to an n8n webhook to run ingest, clean, analyze, or report workflows. ANIS interprets user intent, triggers the correct agent, and returns backend logs, summaries, KPIs, and links from Google Drive.

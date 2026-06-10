@@ -1,0 +1,886 @@
+{
+  "name": "REPORT Agent Sub-Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "YOUR_ID",
+      "typeVersion": 1.1,
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        1856,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "'YOUR_FOLDER_ID' in parents",
+        "returnAll": true,
+        "filter": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2192,
+        -144
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Drive \u2014 List Files (GOLD folder)",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "'YOUR_FOLDER_ID' in parents",
+        "returnAll": true,
+        "filter": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2176,
+        272
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Drive \u2014 List Files (CLEAN folder) for REPORT agent",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $binary.data.mimeType }}",
+                    "rightValue": "text/csv",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "YOUR_ID"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "YOUR_ID",
+                    "leftValue": "={{ $binary.data.mimeType }}",
+                    "rightValue": "application/json",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "YOUR_ID",
+                    "leftValue": "={{ $binary.data.mimeType }}",
+                    "rightValue": "text/plain",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        2960,
+        656
+      ],
+      "id": "YOUR_ID",
+      "name": "Switch \u2014 File Type (by mimeType/extension)"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_ID",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2736,
+        512
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Drive \u2014 Download CLEAN file (for REPORT)",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2496,
+        272
+      ],
+      "id": "YOUR_ID",
+      "name": "Split In Batches \u2014 FOR EACH CLEAN FILE (for REPORT)"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3824,
+        896
+      ],
+      "id": "YOUR_ID",
+      "name": "Merge \u2014 CLEAN Samples"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_ID",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2640,
+        -144
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Drive \u2014 Download Gold file (for REPORT)",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        3168,
+        -144
+      ],
+      "id": "YOUR_ID",
+      "name": "Extract from CSV File from GOLD (for REPORT)"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        3232,
+        480
+      ],
+      "id": "YOUR_ID",
+      "name": "Extract from CSV File from CLEAN (for REPORT)"
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        3232,
+        672
+      ],
+      "id": "YOUR_ID",
+      "name": "Extract from JSON File from CLEAN (for REPORT)"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        3232,
+        848
+      ],
+      "id": "YOUR_ID",
+      "name": "Extract from TXT File from CLEAN (for REPORT)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get file meta from Download node\nconst fileMeta = $node[\"Google Drive \u2014 Download CLEAN file (for REPORT)\"].json;\n\nconst rows = items.map(i => i.json);\nconst sampleRows = rows.slice(0, 5); // first 5 rows only\n\nreturn [{\n  json: {\n    fileName: fileMeta.name,\n    mimeType: fileMeta.mimeType,\n    source: \"csv\",\n    rowCount: rows.length,\n    sampleRows,\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3472,
+        480
+      ],
+      "id": "YOUR_ID",
+      "name": "Function \u2014 Build Sample (CSV) from CLEAN"
+    },
+    {
+      "parameters": {
+        "jsCode": "const fileMeta = $node[\"Google Drive \u2014 Download CLEAN file (for REPORT)\"].json;\n\nconst rows = items.map(i => i.json);\nconst sampleRows = rows.slice(0, 5);\n\nreturn [{\n  json: {\n    fileName: fileMeta.name,\n    mimeType: fileMeta.mimeType,\n    source: \"json\",\n    rowCount: rows.length,\n    sampleRows,\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3472,
+        672
+      ],
+      "id": "YOUR_ID",
+      "name": "Function \u2014 Build Sample (JSON) from CLEAN"
+    },
+    {
+      "parameters": {
+        "jsCode": "const fileMeta = $node[\"Google Drive \u2014 Download CLEAN file (for REPORT)\"].json;\n\n// Depending on Extract node, the text might be in json, json.data, or similar\nconst raw = items[0].json.data ?? items[0].json ?? \"\";\n\nlet text;\nif (typeof raw === 'string') {\n  text = raw;\n} else {\n  // If it's an object/array, stringify it so GPT still sees the content\n  text = JSON.stringify(raw, null, 2);\n}\n\nreturn [{\n  json: {\n    fileName: fileMeta.name,\n    mimeType: fileMeta.mimeType,\n    source: \"txt\",\n    textPreview: text.slice(0, 2000)  // cap length\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3472,
+        848
+      ],
+      "id": "YOUR_ID",
+      "name": "Function \u2014 Build Sample (TXT) from CLEAN"
+    },
+    {
+      "parameters": {
+        "jsCode": "// We expect a single item from \"Extract from CSV File from GOLD (for REPORT)\"\nconst item = (items[0] && items[0].json) || {};\n\n// 1) Rebuild the KPIs object from fields like \"kpis.win_rate\", \"kpis.avg_margin\", ...\nconst kpis = {};\n\n// Case A: if extractor already gives a nested \"kpis\" object\nif (item.kpis && typeof item.kpis === 'object') {\n  for (const [metric, raw] of Object.entries(item.kpis)) {\n    let value = raw;\n    if (typeof value === 'string') {\n      const n = Number(value);\n      value = isNaN(n) ? value : n;\n    }\n    kpis[metric] = value;\n  }\n} else {\n  // Case B: flattened keys like \"kpis.win_rate\"\n  for (const key of Object.keys(item)) {\n    if (!key.startsWith('kpis.')) continue;\n\n    const metric = key.slice('kpis.'.length); // e.g. \"win_rate\"\n    let value = item[key];\n\n    if (typeof value === 'string') {\n      const n = Number(value);\n      value = isNaN(n) ? value : n;\n    }\n\n    kpis[metric] = value;\n  }\n}\n\n// Optional extras: summary text from the KPI CSV (if present)\nconst summary = item.summary || null;\n\n// Metadata about the KPI file from the Download node\nconst fileMeta = $node[\"Google Drive \u2014 Download Gold file (for REPORT)\"].json;\n\nreturn [{\n  json: {\n    kpis,\n    kpiSource: {\n      fileName: fileMeta.name,\n      fileId: fileMeta.id,\n    },\n    summary,   // optional, can be used in the REPORT prompt\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3664,
+        -144
+      ],
+      "id": "YOUR_ID",
+      "name": "Function \u2014 Build KPI Object from GOLD (for REPORT)"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3952,
+        112
+      ],
+      "id": "YOUR_ID",
+      "name": "Merge \u2014 (CLEAN summary + GOLD KPI object)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Gather ALL processed samples coming from Split In Batches (Done Output)\nconst samples = $input.all().map(i => i.json);\n\nreturn [{\n  json: {\n    cleanSummary: {\n      fileCount: samples.length,\n      files: samples,\n    }\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3664,
+        256
+      ],
+      "id": "YOUR_ID",
+      "name": "Function \u2014 Unified CLEAN Summary"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        4256,
+        368
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Stub prompt \u2013 use chat messages below.",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are the REPORT AI agent inside the Personal AI Factory v1 (ANIS).|You receive one JSON object with:- kpis: numeric metrics (e.g. avg_margin, aging_days, count_rows, win_rate if present)- kpiSource: metadata about the KPI file- summary: plain text hint from the KPI engine- cleanSummary: { fileCount, files[] }, where each file has:  - fileName  - source: csv | json | txt  - rowCount? and sampleRows? for csv/json  - textPreview? for txtRules:- Use kpis as the only numeric truth source. Do not invent or guess numbers.- Do not infer KPIs from cleanSummary sampleRows; they are only for qualitative context.- Do not use any external knowledge. Only use the JSON content.Output (plain text, no JSON, no markdown):1) KPI Overview \u2013 short paragraph summarizing what the KPIs indicate.2) Data Processed \u2013 describe how many files were processed and what types they are.3) Key Insights \u2013 3\u20135 bullet-style sentences (write bullets as \"- ...\") linking KPIs and file insights.4) Recommended Actions \u2013 3\u20135 action-oriented sentences, grounded strictly in the KPIs and the examples from cleanSummary.Tone: professional, concise, business-focused. No chit-chat, no self-reference."
+            },
+            {
+              "type": "YOUR_ID",
+              "message": "=Here is the merged JSON for today\u2019s report:\n\n{{ JSON.stringify($json, null, 2) }}\n\nGenerate the report according to the system instructions.\n"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        4160,
+        112
+      ],
+      "id": "YOUR_ID",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "reportText",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        4688,
+        112
+      ],
+      "id": "YOUR_ID",
+      "name": "Convert to TXT File (for REPORT agent)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract the text returned by Gemini\nconst geminiOutput = $json.text || \"\";\n\n// Build YYYY-MM-DD manually to avoid timezone issues\nconst d = new Date();\nconst year = d.getFullYear();\nconst month = String(d.getMonth() + 1).padStart(2, \"0\");\nconst day = String(d.getDate()).padStart(2, \"0\");\nconst today = `${year}-${month}-${day}`;\n\n// Filename format: YYYY-MM-DD_REPORT.txt (e.g., 2025-12-07_REPORT.txt)\nconst reportFileName = `${today}_REPORT.txt`;\n\n// Output structured data for next node\nreturn [\n  {\n    json: {\n      reportText: geminiOutput,\n      reportFileName,\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4480,
+        112
+      ],
+      "id": "YOUR_ID",
+      "name": "Function \u2013 Format REPORT content (prepare text + filename)"
+    },
+    {
+      "parameters": {
+        "name": "={{ $node[\"Function \u2013 Format REPORT content (prepare text + filename)\"].json[\"reportFileName\"] }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_ID",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        4912,
+        112
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Drive \u2013 Upload to REPORT folder (Inside GOLD folder)",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_ID",
+          "mode": "list",
+          "cachedResultName": "AI_Factory_Control",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "EVENT_LOG",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit#gid=2072862873"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ts": "={{ $now }}",
+            "agent": "report",
+            "input": "={{ $node[\"Function \u2013 Format REPORT content (prepare text + filename)\"].json[\"reportFileName\"] }}",
+            "output": "={{ $node[\"Google Drive \u2013 Upload to REPORT folder (Inside GOLD folder)\"].json[\"webViewLink\"] }}",
+            "notes": "Generated KPI summary and uploaded TXT to REPORT folder",
+            "status": "report_success",
+            "action": "YOUR_ID"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ts",
+              "displayName": "ts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "agent",
+              "displayName": "agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "input",
+              "displayName": "input",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "output",
+              "displayName": "output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        5136,
+        112
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Sheets \u2014 Append EVENT_LOG (report_success)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "REPORT Agent",
+        "height": 1440,
+        "width": 3696,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1728,
+        -256
+      ],
+      "typeVersion": 1,
+      "id": "YOUR_ID",
+      "name": "Sticky Note3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Google Drive \u2014 List Files (GOLD folder)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Google Drive \u2014 List Files (CLEAN folder) for REPORT agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive \u2014 List Files (GOLD folder)": {
+      "main": [
+        [
+          {
+            "node": "Google Drive \u2014 Download Gold file (for REPORT)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive \u2014 List Files (CLEAN folder) for REPORT agent": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches \u2014 FOR EACH CLEAN FILE (for REPORT)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch \u2014 File Type (by mimeType/extension)": {
+      "main": [
+        [
+          {
+            "node": "Extract from CSV File from CLEAN (for REPORT)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from JSON File from CLEAN (for REPORT)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from TXT File from CLEAN (for REPORT)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive \u2014 Download CLEAN file (for REPORT)": {
+      "main": [
+        [
+          {
+            "node": "Switch \u2014 File Type (by mimeType/extension)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches \u2014 FOR EACH CLEAN FILE (for REPORT)": {
+      "main": [
+        [
+          {
+            "node": "Function \u2014 Unified CLEAN Summary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive \u2014 Download CLEAN file (for REPORT)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge \u2014 CLEAN Samples": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches \u2014 FOR EACH CLEAN FILE (for REPORT)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive \u2014 Download Gold file (for REPORT)": {
+      "main": [
+        [
+          {
+            "node": "Extract from CSV File from GOLD (for REPORT)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from CSV File from GOLD (for REPORT)": {
+      "main": [
+        [
+          {
+            "node": "Function \u2014 Build KPI Object from GOLD (for REPORT)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from CSV File from CLEAN (for REPORT)": {
+      "main": [
+        [
+          {
+            "node": "Function \u2014 Build Sample (CSV) from CLEAN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from JSON File from CLEAN (for REPORT)": {
+      "main": [
+        [
+          {
+            "node": "Function \u2014 Build Sample (JSON) from CLEAN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from TXT File from CLEAN (for REPORT)": {
+      "main": [
+        [
+          {
+            "node": "Function \u2014 Build Sample (TXT) from CLEAN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function \u2014 Build Sample (CSV) from CLEAN": {
+      "main": [
+        [
+          {
+            "node": "Merge \u2014 CLEAN Samples",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function \u2014 Build Sample (JSON) from CLEAN": {
+      "main": [
+        [
+          {
+            "node": "Merge \u2014 CLEAN Samples",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Function \u2014 Build Sample (TXT) from CLEAN": {
+      "main": [
+        [
+          {
+            "node": "Merge \u2014 CLEAN Samples",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Function \u2014 Build KPI Object from GOLD (for REPORT)": {
+      "main": [
+        [
+          {
+            "node": "Merge \u2014 (CLEAN summary + GOLD KPI object)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge \u2014 (CLEAN summary + GOLD KPI object)": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function \u2014 Unified CLEAN Summary": {
+      "main": [
+        [
+          {
+            "node": "Merge \u2014 (CLEAN summary + GOLD KPI object)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Function \u2013 Format REPORT content (prepare text + filename)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to TXT File (for REPORT agent)": {
+      "main": [
+        [
+          {
+            "node": "Google Drive \u2013 Upload to REPORT folder (Inside GOLD folder)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function \u2013 Format REPORT content (prepare text + filename)": {
+      "main": [
+        [
+          {
+            "node": "Convert to TXT File (for REPORT agent)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive \u2013 Upload to REPORT folder (Inside GOLD folder)": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets \u2014 Append EVENT_LOG (report_success)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "YOUR_ID",
+  "meta": {
+    "instanceId": "YOUR_N8N_INSTANCE_ID"
+  },
+  "id": "BFyXy0VYIl1DFBjA",
+  "tags": []
+}

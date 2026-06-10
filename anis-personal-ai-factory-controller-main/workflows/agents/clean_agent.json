@@ -1,0 +1,3203 @@
+{
+  "name": "CLEAN Agent - Manual Trigger",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        320,
+        -384
+      ],
+      "id": "manual_trigger_clean",
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "='YOUR_ID' in parents",
+        "returnAll": true,
+        "filter": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        576,
+        -384
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Drive — List Files (RAW folder)",
+      "executeOnce": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        848,
+        -384
+      ],
+      "id": "YOUR_ID",
+      "name": "Split In Batches — FOR EACH RAW FILE"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_DRIVE_FOLDER_ID",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1120,
+        -208
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Drive — Download RAW file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "YOUR_ID",
+              "leftValue": "={{ $binary.data.mimeType }}",
+              "rightValue": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "YOUR_ID",
+              "leftValue": "={{ $binary.data.mimeType }}",
+              "rightValue": "application/vnd.ms-excel",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "YOUR_ID",
+              "leftValue": "={{ $binary.data.mimeType }}",
+              "rightValue": "text/csv",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "YOUR_ID",
+              "leftValue": "={{ $binary.data.mimeType }}",
+              "rightValue": "application/pdf",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "YOUR_ID",
+              "leftValue": "={{ $binary.data.mimeType }}",
+              "rightValue": "text/plain",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "YOUR_ID",
+              "leftValue": "={{ $binary.data.mimeType }}",
+              "rightValue": "application/json",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1344,
+        -208
+      ],
+      "id": "YOUR_ID",
+      "name": "IF Node — Check MIME TYPE"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "list",
+          "cachedResultName": "AI_Factory_Control",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "EVENT_LOG",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit#gid=2072862873"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ts": "={{ $now }}",
+            "agent": "clean",
+            "action": "unsupported_file",
+            "notes": "Unsupported MIME type detected",
+            "status": "error",
+            "output": "unsupported",
+            "input": "={{ $json[\"id\"] || $json[\"name\"] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ts",
+              "displayName": "ts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "agent",
+              "displayName": "agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "input",
+              "displayName": "input",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "output",
+              "displayName": "output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1584,
+        -96
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Sheets — Append (EVENT_LOG) - unsupported_file",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $binary.data.mimeType }}",
+                    "rightValue": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "YOUR_ID"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "YOUR_ID",
+                    "leftValue": "={{ $binary.data.mimeType }}",
+                    "rightValue": "application/vnd.ms-excel",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "YOUR_ID",
+                    "leftValue": "={{ $binary.data.mimeType }}",
+                    "rightValue": "text/csv",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "YOUR_ID",
+                    "leftValue": "={{ $binary.data.mimeType }}",
+                    "rightValue": "application/json",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "YOUR_ID",
+                    "leftValue": "={{ $binary.data.mimeType }}",
+                    "rightValue": "application/pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "YOUR_ID",
+                    "leftValue": "={{ $binary.data.mimeType }}",
+                    "rightValue": "text/plain",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        1808,
+        -288
+      ],
+      "id": "YOUR_ID",
+      "name": "Switch — Route MIME TYPE"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        -960
+      ],
+      "id": "YOUR_ID",
+      "name": "Extract from XLSX File"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        2496,
+        -960
+      ],
+      "id": "YOUR_ID",
+      "name": "Convert to CSV from XLSX"
+    },
+    {
+      "parameters": {
+        "operation": "xls",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        2176,
+        -768
+      ],
+      "id": "YOUR_ID",
+      "name": "Extract from XLS File"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        2480,
+        -768
+      ],
+      "id": "YOUR_ID",
+      "name": "Convert to CSV from XLS"
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        2160,
+        -576
+      ],
+      "id": "YOUR_ID",
+      "name": "Spreadsheet File — Convert to JSON"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        2640,
+        -576
+      ],
+      "id": "YOUR_ID",
+      "name": "Spreadsheet File — Convert to CSV"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// ===== Smart Normalization (optimized) =====\n\n// Column name mapping rules\nconst columnMap = {\n  \"full name\": \"name\",\n  \"email address\": \"email\",\n  \"phone no\": \"phone\",\n  \"amount ($)\": \"amount\",\n};\n\n// Default schema template\nconst defaultSchema = {\n  name: null,\n  email: null,\n  phone: null,\n  amount: null,\n  source_file: $json.filename || null,\n  processed_at: new Date().toISOString(),\n};\n\nlet normalized = {};\n\n// Normalize each key/value\nfor (let [key, value] of Object.entries($json)) {\n\n  // Key normalization: trim → lowercase → strip symbols → replace spaces with _\n  let cleanKey = key.trim().toLowerCase()\n    .replace(/[^a-z0-9 ]/g, \"\")\n    .replace(/\\s+/g, \"_\");\n\n  // Apply mapping\n  cleanKey = columnMap[cleanKey] || cleanKey;\n\n  // Value normalization\n  value = (value === \"\" || value === undefined || value === null)\n    ? null\n    : String(value).trim();\n\n  normalized[cleanKey] = value;\n}\n\n// Merge with schema defaults\nreturn { ...defaultSchema, ...normalized };\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        -576
+      ],
+      "id": "YOUR_ID",
+      "name": "Function Node — Smart Normalization"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nfor (const item of items) {\n    let text = item.binary.data.toString('utf8');\n\n    text = text.replace(/\\r\\n|\\r/g, \"\\n\");\n    text = text.replace(/[ \\t]+/g, \" \");\n    text = text.replace(/\\n{3,}/g, \"\\n\\n\");\n    text = text.replace(/[\\u201c\\u201d]/g, '\"').replace(/[\\u2018\\u2019]/g, \"'\");\n    text = text.replace(/[^\\x09\\x0A\\x0D\\x20-\\x7E]/g, \"\");\n    text = text.split(\"\\n\").map(line => line.trim()).join(\"\\n\");\n\n    item.json = { content: text };\n}\n\nreturn items;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2208,
+        208
+      ],
+      "id": "YOUR_ID",
+      "name": "Function Node — Smart TXT Normalization"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "content",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        2560,
+        208
+      ],
+      "id": "YOUR_ID",
+      "name": "Convert to Text File"
+    },
+    {
+      "parameters": {
+        "url": "YOUR_VERCEL_OCR_API_ENDPOINT",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"fileURL\": \"https://drive.google.com/uc?export=download&id={{$json[\"id\"]}}\" }",
+        "options": {
+          "response": {}
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2176,
+        -16
+      ],
+      "id": "YOUR_ID",
+      "name": "HTTP Request — Call Vercel OCR endpoint) (/api/ocr-summarize)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Smart TXT Normalization for OCR Extracted Text (Personal AI Factory v1)\n\nconst raw = $json.text || \"\";\n\n// Normalize, clean and format text\nconst normalized = raw\n  .replace(/\\r\\n/g, \"\\n\")        // Convert CRLF to LF\n  .replace(/[ \\t]+/g, \" \")       // Normalize extra spaces\n  .replace(/\\n{3,}/g, \"\\n\\n\")    // Reduce >2 blank lines to max 1\n  .replace(/[^\\S\\r\\n]+/g, \" \")   // Trim odd spacing without removing line breaks\n  .replace(/\\u00A0/g, \" \")       // Replace non-breaking spaces\n  .trim();\n\n// Optional: remove repeating headers/footer patterns if needed\n// Example cleanup for page artifacts:\nconst finalText = normalized\n  .replace(/Page \\d+ of \\d+/gi, \"\")\n  .replace(/Confidential/gi, \"\")\n  .trim();\n\nreturn [\n  {\n    json: {\n      text: finalText\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2432,
+        -16
+      ],
+      "id": "YOUR_ID",
+      "name": "Function — Smart TXT Normalization from Extracted text"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        2672,
+        -16
+      ],
+      "id": "YOUR_ID",
+      "name": "Convert to Text File (.txt)"
+    },
+    {
+      "parameters": {
+        "name": "={{ $node[\"Switch — Route MIME TYPE\"].binary.data.fileName.replace(\".xlsx\", \".csv\") }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_DRIVE_FOLDER_ID",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2928,
+        -960
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Drive — Upload file (to CLEAN folder) from XLSX to CSV",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $node[\"Switch — Route MIME TYPE\"].binary.data.fileName.replace(\".xls\", \".csv\") }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_DRIVE_FOLDER_ID",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2928,
+        -768
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Drive — Upload file (to CLEAN folder) from XLS to CSV",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $node[\"Switch — Route MIME TYPE\"].binary.data.fileName}}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_DRIVE_FOLDER_ID",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2928,
+        -208
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Drive — Upload JSON file (to CLEAN folder)",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $node[\"Switch — Route MIME TYPE\"].binary.data.fileName}}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_DRIVE_FOLDER_ID",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2928,
+        -576
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Drive — Upload normalized CSV file (to CLEAN folder)",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $node[\"Switch — Route MIME TYPE\"].binary.data.fileName.replace(\".pdf\", \".txt\") }}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_DRIVE_FOLDER_ID",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2928,
+        -16
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Drive — Upload file (to CLEAN folder) from PDF to TXT",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $node[\"Switch — Route MIME TYPE\"].binary.data.fileName }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_DRIVE_FOLDER_ID",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2928,
+        208
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Drive — Upload normalized TXT file (to CLEAN folder)",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "list",
+          "cachedResultName": "AI_Factory_Control",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "DATA_CATALOG",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "clean_success",
+            "added_at": "={{$now}}",
+            "source": "=gdrive",
+            "email_id": "={{ $json[\"owners\"][0][\"emailAddress\"] }}",
+            "id": "={{$json.id}}",
+            "clean_path": "={{$node[\"Google Drive — Upload file (to CLEAN folder) from XLSX to CSV\"].json[\"webViewLink\"]}}",
+            "mime": "={{ $json[\"mimeType\"] }}",
+            "filename": "={{$json[\"name\"]}}",
+            "size": "={{ (Number($json[\"size\"]) / 1024).toFixed(2) }} KB"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_id",
+              "displayName": "email_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "filename",
+              "displayName": "filename",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mime",
+              "displayName": "mime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "size",
+              "displayName": "size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "raw_path",
+              "displayName": "raw_path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "clean_path",
+              "displayName": "clean_path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "gold_path",
+              "displayName": "gold_path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "added_at",
+              "displayName": "added_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3184,
+        -960
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Sheets \u2014 Append DATA_CATALOG for XLSX (clean_success)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "list",
+          "cachedResultName": "AI_Factory_Control",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "DATA_CATALOG",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "clean_success",
+            "added_at": "={{$now}}",
+            "source": "gdrive",
+            "email_id": "={{ $json[\"owners\"][0][\"emailAddress\"] }}",
+            "id": "={{$json[\"id\"]}}",
+            "clean_path": "={{$node[\"Google Drive \u2014 Upload file (to CLEAN folder) from XLS to CSV\"].json[\"webViewLink\"]}}",
+            "mime": "={{ $json[\"mimeType\"] }}",
+            "filename": "={{$json[\"name\"]}}",
+            "size": "={{ (Number($json[\"size\"]) / 1024).toFixed(2) }} KB"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_id",
+              "displayName": "email_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "filename",
+              "displayName": "filename",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mime",
+              "displayName": "mime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "size",
+              "displayName": "size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "raw_path",
+              "displayName": "raw_path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "clean_path",
+              "displayName": "clean_path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "gold_path",
+              "displayName": "gold_path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "added_at",
+              "displayName": "added_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3184,
+        -768
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Sheets \u2014 Append DATA_CATALOG for XLS (clean_success)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "list",
+          "cachedResultName": "AI_Factory_Control",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "DATA_CATALOG",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "clean_success",
+            "added_at": "={{$now}}",
+            "source": "gdrive",
+            "email_id": "={{ $json[\"owners\"][0][\"emailAddress\"] }}",
+            "id": "={{$json[\"id\"]}}",
+            "clean_path": "={{$node[\"Google Drive \u2014 Upload normalized CSV file (to CLEAN folder)\"].json[\"webViewLink\"]}}",
+            "mime": "={{ $json[\"mimeType\"] }}",
+            "filename": "={{$json[\"name\"]}}",
+            "size": "={{ (Number($json[\"size\"]) / 1024).toFixed(2) }} KB"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_id",
+              "displayName": "email_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "filename",
+              "displayName": "filename",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mime",
+              "displayName": "mime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "size",
+              "displayName": "size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "raw_path",
+              "displayName": "raw_path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "clean_path",
+              "displayName": "clean_path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "gold_path",
+              "displayName": "gold_path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "added_at",
+              "displayName": "added_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3184,
+        -576
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Sheets \u2014 Append DATA_CATALOG for CSV (clean_success)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "list",
+          "cachedResultName": "AI_Factory_Control",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "DATA_CATALOG",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "clean_success",
+            "added_at": "={{$now}}",
+            "source": "gdrive",
+            "email_id": "={{ $json[\"owners\"][0][\"emailAddress\"] }}",
+            "id": "={{$json[\"id\"]}}",
+            "clean_path": "={{$node[\"Google Drive \u2014 Upload JSON file (to CLEAN folder)\"].json[\"webViewLink\"]}}",
+            "mime": "={{ $json[\"mimeType\"] }}",
+            "filename": "={{$json[\"name\"]}}",
+            "size": "={{ (Number($json[\"size\"]) / 1024).toFixed(2) }} KB"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_id",
+              "displayName": "email_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "filename",
+              "displayName": "filename",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mime",
+              "displayName": "mime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "size",
+              "displayName": "size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "raw_path",
+              "displayName": "raw_path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "clean_path",
+              "displayName": "clean_path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "gold_path",
+              "displayName": "gold_path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "added_at",
+              "displayName": "added_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3184,
+        -208
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Sheets \u2014 Append DATA_CATALOG for JSON (clean_success)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "list",
+          "cachedResultName": "AI_Factory_Control",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "DATA_CATALOG",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "clean_success",
+            "added_at": "={{$now}}",
+            "source": "gdrive",
+            "id": "={{$json[\"id\"]}}",
+            "email_id": "={{ $json[\"owners\"][0][\"emailAddress\"] }}",
+            "filename": "={{$json[\"name\"]}}",
+            "mime": "={{ $json[\"mimeType\"] }}",
+            "size": "={{ (Number($json[\"size\"]) / 1024).toFixed(2) }} KB",
+            "clean_path": "={{$node[\"Google Drive \u2014 Upload file (to CLEAN folder) from PDF to TXT\"].json[\"webViewLink\"]}}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_id",
+              "displayName": "email_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "filename",
+              "displayName": "filename",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mime",
+              "displayName": "mime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "size",
+              "displayName": "size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "raw_path",
+              "displayName": "raw_path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "clean_path",
+              "displayName": "clean_path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "gold_path",
+              "displayName": "gold_path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "added_at",
+              "displayName": "added_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3184,
+        -16
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Sheets \u2014 Append DATA_CATALOG for PDF (clean_success)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "list",
+          "cachedResultName": "AI_Factory_Control",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "DATA_CATALOG",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "clean_success",
+            "added_at": "={{$now}}",
+            "source": "gdrive",
+            "email_id": "={{ $json[\"owners\"][0][\"emailAddress\"] }}",
+            "id": "={{$json[\"id\"]}}",
+            "clean_path": "={{$node[\"Google Drive \u2014 Upload normalized TXT file (to CLEAN folder)\"].json[\"webViewLink\"]}}",
+            "mime": "={{ $json[\"mimeType\"] }}",
+            "filename": "={{$json[\"name\"]}}",
+            "size": "={{ (Number($json[\"size\"]) / 1024).toFixed(2) }} KB"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_id",
+              "displayName": "email_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "filename",
+              "displayName": "filename",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mime",
+              "displayName": "mime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "size",
+              "displayName": "size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "raw_path",
+              "displayName": "raw_path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "clean_path",
+              "displayName": "clean_path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "gold_path",
+              "displayName": "gold_path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "added_at",
+              "displayName": "added_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3200,
+        208
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Sheets \u2014 Append DATA_CATALOG for TXT (clean_success)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "list",
+          "cachedResultName": "AI_Factory_Control",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "EVENT_LOG",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit#gid=2072862873"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "agent": "clean",
+            "ts": "={{ $now }}",
+            "action": "YOUR_ID",
+            "status": "success",
+            "notes": "Text extracted and normalized. Converted to CSV and saved to CLEAN folder.",
+            "output": "={{$node[\"Google Drive \u2014 Upload file (to CLEAN folder) from XLS to CSV\"].json[\"webViewLink\"]}}",
+            "input": "={{$node[\"Google Drive \u2014 Upload file (to CLEAN folder) from XLS to CSV\"].json[\"name\"]}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ts",
+              "displayName": "ts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "agent",
+              "displayName": "agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "input",
+              "displayName": "input",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "output",
+              "displayName": "output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3424,
+        -768
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Sheets \u2014 Append EVENT_LOG XLS (clean_success)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "list",
+          "cachedResultName": "AI_Factory_Control",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "EVENT_LOG",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit#gid=2072862873"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "agent": "clean",
+            "ts": "={{ $now }}",
+            "action": "YOUR_ID",
+            "status": "success",
+            "notes": "Text extracted and normalized. Converted to CSV and saved to CLEAN folder.",
+            "output": "={{$node[\"Google Drive \u2014 Upload normalized CSV file (to CLEAN folder)\"].json[\"webViewLink\"]}}",
+            "input": "={{$node[\"Google Drive \u2014 Upload normalized CSV file (to CLEAN folder)\"].json[\"name\"]}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ts",
+              "displayName": "ts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "agent",
+              "displayName": "agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "input",
+              "displayName": "input",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "output",
+              "displayName": "output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3424,
+        -576
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Sheets \u2014 Append EVENT_LOG CSV (clean_success)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "list",
+          "cachedResultName": "AI_Factory_Control",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "EVENT_LOG",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit#gid=2072862873"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "agent": "clean",
+            "ts": "={{ $now }}",
+            "action": "YOUR_ID",
+            "status": "success",
+            "notes": "Text extracted and normalized. Converted to JSON and saved to CLEAN folder.",
+            "output": "={{$node[\"Google Drive \u2014 Upload JSON file (to CLEAN folder)\"].json[\"webViewLink\"]}}",
+            "input": "={{$node[\"Google Drive \u2014 Upload JSON file (to CLEAN folder)\"].json[\"name\"]}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ts",
+              "displayName": "ts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "agent",
+              "displayName": "agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "input",
+              "displayName": "input",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "output",
+              "displayName": "output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3424,
+        -208
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Sheets \u2014 Append EVENT_LOG JSON (clean_success)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "list",
+          "cachedResultName": "AI_Factory_Control",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "EVENT_LOG",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit#gid=2072862873"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ts": "={{ $now }}",
+            "agent": "clean",
+            "action": "YOUR_ID",
+            "input": "={{ $node[\"Google Drive \u2014 Upload file (to CLEAN folder) from PDF to TXT\"].json[\"name\"] }}",
+            "output": "={{$node[\"Google Drive \u2014 Upload file (to CLEAN folder) from PDF to TXT\"].json[\"webViewLink\"]}}",
+            "status": "success",
+            "notes": "Text extracted and normalized. Converted to TXT and saved to CLEAN folder."
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ts",
+              "displayName": "ts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "agent",
+              "displayName": "agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "input",
+              "displayName": "input",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "output",
+              "displayName": "output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3440,
+        -16
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Sheets \u2014 Append EVENT_LOG PDF (clean_success)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "list",
+          "cachedResultName": "AI_Factory_Control",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "EVENT_LOG",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit#gid=2072862873"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "agent": "clean",
+            "ts": "={{ $now }}",
+            "action": "YOUR_ID",
+            "status": "success",
+            "notes": "Text extracted and normalized. Converted to TXT and saved to CLEAN folder.",
+            "output": "={{$node[\"Google Drive \u2014 Upload normalized TXT file (to CLEAN folder)\"].json[\"webViewLink\"]}}",
+            "input": "={{$node[\"Google Drive \u2014 Upload normalized TXT file (to CLEAN folder)\"].json[\"name\"]}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ts",
+              "displayName": "ts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "agent",
+              "displayName": "agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "input",
+              "displayName": "input",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "output",
+              "displayName": "output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3440,
+        208
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Sheets \u2014 Append EVENT_LOG TXT (clean_success)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        848,
+        -384
+      ],
+      "id": "YOUR_ID",
+      "name": "Split In Batches \u2014 FOR EACH RAW FILE"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "='YOUR_ID' in parents and modifiedTime > \"{{ $node[\"Set \u2013 Stores triggerTime UTC ISO\"].json[\"triggerTime\"] }}\"",
+        "returnAll": true,
+        "filter": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        576,
+        -384
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Drive \u2014 List Files (RAW folder)",
+      "executeOnce": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 6
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        4176,
+        192
+      ],
+      "id": "YOUR_ID",
+      "name": "Merge (CLEAN Lane)"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "list",
+          "cachedResultName": "AI_Factory_Control",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "EVENT_LOG",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1G4x50V3uHSy-jCFt_pf-ZDpvlJN9HPX018-ju8PHdNY/edit#gid=2072862873"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "agent": "clean",
+            "ts": "={{ $now }}",
+            "action": "YOUR_ID",
+            "status": "success",
+            "notes": "Text extracted and normalized. Converted to CSV and saved to CLEAN folder.",
+            "output": "={{$node[\"Google Drive \u2014 Upload file (to CLEAN folder) from XLSX to CSV\"].json[\"webViewLink\"]}}",
+            "input": "={{$node[\"Google Drive \u2014 Upload file (to CLEAN folder) from XLSX to CSV\"].json[\"name\"]}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ts",
+              "displayName": "ts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "agent",
+              "displayName": "agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "input",
+              "displayName": "input",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "output",
+              "displayName": "output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3424,
+        -960
+      ],
+      "id": "YOUR_ID",
+      "name": "Google Sheets \u2014 Append EVENT_LOG XLSX (clean_success)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "CLEAN Agent",
+        "height": 1536,
+        "width": 4064,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        320,
+        -1008
+      ],
+      "typeVersion": 1,
+      "id": "YOUR_ID",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "INGST Agent",
+        "height": 576,
+        "width": 1920,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1616,
+        -544
+      ],
+      "typeVersion": 1,
+      "id": "YOUR_ID",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 17
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1856,
+        -288
+      ],
+      "id": "YOUR_ID",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "content": "Cron / Scheduled Trigger\n",
+        "height": 304,
+        "width": 336,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1968,
+        -400
+      ],
+      "typeVersion": 1,
+      "id": "YOUR_ID",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"triggerTime\": \"{{ new Date($json.timestamp).toISOString() }}\"\n}\n",
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1536,
+        -288
+      ],
+      "id": "YOUR_ID",
+      "name": "Set \u2013 Stores triggerTime UTC ISO"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "31KoZPAfZNIKGOtE",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/31KoZPAfZNIKGOtE",
+          "cachedResultName": "ANALYZE Agent Sub-Workflow"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        4544,
+        -400
+      ],
+      "id": "YOUR_ID",
+      "name": "Execute Workflow \u2014 Calls ANALYZE Agent"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "BFyXy0VYIl1DFBjA",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/BFyXy0VYIl1DFBjA",
+          "cachedResultName": "REPORT Agent Sub-Workflow"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        4944,
+        -400
+      ],
+      "id": "YOUR_ID",
+      "name": "Execute Workflow \u2014 Calls REPORT Agent"
+    },
+    {
+      "parameters": {
+        "content": "ANALYZE Agent",
+        "height": 288,
+        "width": 384
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        4400,
+        -480
+      ],
+      "typeVersion": 1,
+      "id": "YOUR_ID",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "REPORT Agent",
+        "height": 288,
+        "width": 384,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        4800,
+        -480
+      ],
+      "typeVersion": 1,
+      "id": "YOUR_ID",
+      "name": "Sticky Note4"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail \u2014 Get many messages": {
+      "main": [
+        [
+          {
+            "node": "Gmail \u2014 (Get Message + Download Attachments)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail \u2014 (Get Message + Download Attachments)": {
+      "main": [
+        [
+          {
+            "node": "Split Out \u2014 (1 attachment = 1 item)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Node \u2014 Condition: Item has $binary": {
+      "main": [
+        [
+          {
+            "node": "Google Drive \u2014 Upload file to RAW folder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Split Out \u2014 (1 attachment = 1 item)": {
+      "main": [
+        [
+          {
+            "node": "IF Node \u2014 Condition: Item has $binary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive \u2014 Upload file to RAW folder": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets \u2014 Append (DATA_CATALOG)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets \u2014 Append (DATA_CATALOG)": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets \u2014 Append (EVENT_LOG)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive \u2014 Download RAW file": {
+      "main": [
+        [
+          {
+            "node": "IF Node \u2014 Check MIME TYPE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets \u2014 Append (EVENT_LOG) - unsupported_file": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches \u2014 FOR EACH RAW FILE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Node \u2014 Check MIME TYPE": {
+      "main": [
+        [
+          {
+            "node": "Switch \u2014 Route MIME TYPE",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Sheets \u2014 Append (EVENT_LOG) - unsupported_file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch \u2014 Route MIME TYPE": {
+      "main": [
+        [
+          {
+            "node": "Extract from XLSX File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from XLS File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Spreadsheet File \u2014 Convert to JSON",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive \u2014 Upload JSON file (to CLEAN folder)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request \u2014 Call Vercel OCR endpoint) (/api/ocr-summarize)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Function Node \u2014 Smart TXT Normalization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from XLSX File": {
+      "main": [
+        [
+          {
+            "node": "Convert to CSV from XLSX",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from XLS File": {
+      "main": [
+        [
+          {
+            "node": "Convert to CSV from XLS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Spreadsheet File \u2014 Convert to JSON": {
+      "main": [
+        [
+          {
+            "node": "Function Node \u2014 Smart Normalization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function Node \u2014 Smart Normalization": {
+      "main": [
+        [
+          {
+            "node": "Spreadsheet File \u2014 Convert to CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function Node \u2014 Smart TXT Normalization": {
+      "main": [
+        [
+          {
+            "node": "Convert to Text File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request \u2014 Call Vercel OCR endpoint) (/api/ocr-summarize)": {
+      "main": [
+        [
+          {
+            "node": "Function \u2014 Smart TXT Normalization from Extracted text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function \u2014 Smart TXT Normalization from Extracted text": {
+      "main": [
+        [
+          {
+            "node": "Convert to Text File (.txt)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to CSV from XLSX": {
+      "main": [
+        [
+          {
+            "node": "Google Drive \u2014 Upload file (to CLEAN folder) from XLSX to CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Spreadsheet File \u2014 Convert to CSV": {
+      "main": [
+        [
+          {
+            "node": "Google Drive \u2014 Upload normalized CSV file (to CLEAN folder)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to CSV from XLS": {
+      "main": [
+        [
+          {
+            "node": "Google Drive \u2014 Upload file (to CLEAN folder) from XLS to CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to Text File (.txt)": {
+      "main": [
+        [
+          {
+            "node": "Google Drive \u2014 Upload file (to CLEAN folder) from PDF to TXT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to Text File": {
+      "main": [
+        [
+          {
+            "node": "Google Drive \u2014 Upload normalized TXT file (to CLEAN folder)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive \u2014 Upload file (to CLEAN folder) from XLSX to CSV": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets \u2014 Append DATA_CATALOG for XLSX (clean_success)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive \u2014 Upload file (to CLEAN folder) from XLS to CSV": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets \u2014 Append DATA_CATALOG for XLS (clean_success)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive \u2014 Upload normalized CSV file (to CLEAN folder)": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets \u2014 Append DATA_CATALOG for CSV (clean_success)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive \u2014 Upload JSON file (to CLEAN folder)": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets \u2014 Append DATA_CATALOG for JSON (clean_success)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive \u2014 Upload file (to CLEAN folder) from PDF to TXT": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets \u2014 Append DATA_CATALOG for PDF (clean_success)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive \u2014 Upload normalized TXT file (to CLEAN folder)": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets \u2014 Append DATA_CATALOG for TXT (clean_success)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets \u2014 Append DATA_CATALOG for XLS (clean_success)": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets \u2014 Append EVENT_LOG XLS (clean_success)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets \u2014 Append DATA_CATALOG for XLSX (clean_success)": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets \u2014 Append EVENT_LOG XLSX (clean_success)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets \u2014 Append DATA_CATALOG for CSV (clean_success)": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets \u2014 Append EVENT_LOG CSV (clean_success)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets \u2014 Append DATA_CATALOG for JSON (clean_success)": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets \u2014 Append EVENT_LOG JSON (clean_success)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets \u2014 Append DATA_CATALOG for PDF (clean_success)": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets \u2014 Append EVENT_LOG PDF (clean_success)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets \u2014 Append DATA_CATALOG for TXT (clean_success)": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets \u2014 Append EVENT_LOG TXT (clean_success)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets \u2014 Append EVENT_LOG TXT (clean_success)": {
+      "main": [
+        [
+          {
+            "node": "Merge (CLEAN Lane)",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "Google Sheets \u2014 Append EVENT_LOG CSV (clean_success)": {
+      "main": [
+        [
+          {
+            "node": "Merge (CLEAN Lane)",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Google Sheets \u2014 Append EVENT_LOG XLS (clean_success)": {
+      "main": [
+        [
+          {
+            "node": "Merge (CLEAN Lane)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Google Sheets \u2014 Append EVENT_LOG JSON (clean_success)": {
+      "main": [
+        [
+          {
+            "node": "Merge (CLEAN Lane)",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Google Sheets \u2014 Append EVENT_LOG PDF (clean_success)": {
+      "main": [
+        [
+          {
+            "node": "Merge (CLEAN Lane)",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Split In Batches \u2014 FOR EACH RAW FILE": {
+      "main": [
+        [
+          {
+            "node": "Execute Workflow \u2014 Calls ANALYZE Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive \u2014 Download RAW file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive \u2014 List Files (RAW folder)": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches \u2014 FOR EACH RAW FILE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge (CLEAN Lane)": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches \u2014 FOR EACH RAW FILE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets \u2014 Append EVENT_LOG XLSX (clean_success)": {
+      "main": [
+        [
+          {
+            "node": "Merge (CLEAN Lane)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set \u2013 Stores triggerTime UTC ISO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets \u2014 Append (EVENT_LOG)": {
+      "main": [
+        [
+          {
+            "node": "Google Drive \u2014 List Files (RAW folder)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set \u2013 Stores triggerTime UTC ISO": {
+      "main": [
+        [
+          {
+            "node": "Gmail \u2014 Get many messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow \u2014 Calls ANALYZE Agent": {
+      "main": [
+        [
+          {
+            "node": "Execute Workflow \u2014 Calls REPORT Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "YOUR_ID",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_ID"
+  },
+  "id": "O4dZL32Anh5XOn6n",
+  "tags": []
+}

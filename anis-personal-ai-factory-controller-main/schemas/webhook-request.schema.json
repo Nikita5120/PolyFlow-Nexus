@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ANIS Webhook Request",
+  "type": "object",
+  "required": ["agent"],
+  "properties": {
+    "agent": {
+      "type": "string",
+      "enum": ["ingest", "clean", "analyze", "report"]
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "gmailQuery": { "type": "string" },
+        "days": { "type": "integer", "default": 7 }
+      }
+    },
+    "options": {
+      "type": "object",
+      "properties": {
+        "fileTypes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "attachmentsOnly": { "type": "boolean" }
+      }
+    },
+    "return": {
+      "type": "string",
+      "enum": ["summary", "kpis", "log", "files"]
+    }
+  }
+}

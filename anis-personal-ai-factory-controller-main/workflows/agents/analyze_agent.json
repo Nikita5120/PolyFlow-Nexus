@@ -1,0 +1,492 @@
+{
+  "name": "ANALYZE Agent Workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual_trigger_analyze",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [1008, 1056]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "'YOUR_CLEAN_FOLDER_ID' in parents",
+        "returnAll": true,
+        "filter": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1328, 1056],
+      "id": "list_clean_files",
+      "name": "Google Drive — List Files (CLEAN folder)",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1632, 1056],
+      "id": "split_batches",
+      "name": "Split In Batches — FOR EACH CLEAN FILE"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json[\"id\"] }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1936, 1216],
+      "id": "download_clean",
+      "name": "Google Drive — Download CLEAN file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $binary.data.mimeType }}",
+                    "rightValue": "text/csv",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "csv_condition"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "json_condition",
+                    "leftValue": "={{ $binary.data.mimeType }}",
+                    "rightValue": "application/json",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "txt_condition",
+                    "leftValue": "={{ $binary.data.mimeType }}",
+                    "rightValue": "text/plain",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [2192, 1200],
+      "id": "switch_file_type",
+      "name": "Switch — File Type (by mimeType)"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [2464, 1136],
+      "id": "extract_csv",
+      "name": "Extract from CSV File"
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [2464, 1344],
+      "id": "extract_json",
+      "name": "Extract from JSON File"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [2768, 1376],
+      "id": "merge_structured",
+      "name": "Merge — Structured Data (CSV + JSON Rows)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// PERSONAL AI FACTORY v1 — KPI ENGINE\n// Input: An array of JSON rows from CLEAN (CSV + JSON only)\n// TXT files are ignored because they never reach this node\n\nconst rows = items.map(i => i.json);\n\n// If no rows (e.g., only TXT in CLEAN), produce empty KPIs\nif (rows.length === 0) {\n  const kpis = {\n    win_rate: 0,\n    avg_margin: 0,\n    aging_days: 0,\n    count_rows: 0\n  };\n\n  const csvRows = [\n    { metric: 'win_rate', value: 0 },\n    { metric: 'avg_margin', value: 0 },\n    { metric: 'aging_days', value: 0 },\n    { metric: 'count_rows', value: 0 }\n  ];\n\n  return [{ json: { kpis, csvRows, summary: \"No structured rows available for KPI computation.\" }}];\n}\n\n// Helpers\nconst parseNumber = (value) => {\n  if (value === undefined || value === null || value === \"\") return null;\n  const cleaned = String(value).replace(/[,₹$]/g, '').trim();\n  const num = Number(cleaned);\n  return Number.isFinite(num) ? num : null;\n};\n\nconst parseDate = (value) => {\n  if (!value) return null;\n  const d = new Date(value);\n  return isNaN(d) ? null : d;\n};\n\n// Flexible mapping to handle different column names\nconst mapCol = (row, names) => {\n  for (const n of names) {\n    if (row[n] !== undefined && row[n] !== null && row[n] !== \"\") {\n      return row[n];\n    }\n  }\n  return null;\n};\n\n// Normalize rows\nconst normalized = rows.map(r => {\n  return {\n    status: (mapCol(r, ['status', 'state', 'result']) || \"\").toString().toLowerCase(),\n    revenue: parseNumber(mapCol(r, ['revenue', 'amount', 'sale_value', 'price'])),\n    cost: parseNumber(mapCol(r, ['cost', 'expense', 'cogs'])),\n    created_at: parseDate(mapCol(r, ['created_at', 'created', 'date', 'timestamp']))\n  };\n});\n\n// Compute KPIs\n\n// Win Rate\nconst total = normalized.length;\nconst wins = normalized.filter(r =>\n  r.status === 'won' ||\n  r.status === 'closed-won' ||\n  r.status === 'success'\n).length;\nconst win_rate = total > 0 ? wins / total : 0;\n\n// Average Margin\nconst margins = normalized\n  .map(r => (r.revenue && r.cost !== null && r.revenue !== 0)\n    ? (r.revenue - r.cost) / r.revenue\n    : null)\n  .filter(v => v !== null);\n\nconst avg_margin = margins.length > 0\n  ? margins.reduce((a, b) => a + b, 0) / margins.length\n  : 0;\n\n// Aging Days\nconst now = new Date();\nconst daysBetween = (a, b) => Math.round((b - a) / (1000 * 60 * 60 * 24));\n\nconst ages = normalized\n  .map(r => r.created_at ? daysBetween(r.created_at, now) : null)\n  .filter(v => v !== null);\n\nconst aging_days = ages.length > 0\n  ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length)\n  : 0;\n\n// Output dataset for CSV\nconst csvRows = [\n  { metric: \"win_rate\", value: win_rate },\n  { metric: \"avg_margin\", value: avg_margin },\n  { metric: \"aging_days\", value: aging_days },\n  { metric: \"count_rows\", value: total }\n];\n\n// Final Output\nconst summary = `Computed ${total} structured rows → win_rate=${(win_rate * 100).toFixed(1)}%, avg_margin=${(avg_margin * 100).toFixed(1)}%, aging_days=${aging_days}`;\n\nreturn [{\n  json: {\n    kpis: {\n      win_rate,\n      avg_margin,\n      aging_days,\n      count_rows: total\n    },\n    csvRows,\n    summary\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2928, 1040],
+      "id": "compute_kpis",
+      "name": "Function Node — Compute KPIs"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [3216, 1120],
+      "id": "convert_csv",
+      "name": "Convert to CSV File"
+    },
+    {
+      "parameters": {
+        "name": "kpi.csv",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "YOUR_GOLD_FOLDER_ID",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [3504, 1216],
+      "id": "upload_gold",
+      "name": "Google Drive — Upload File (to GOLD folder)",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "list",
+          "cachedResultName": "AI_Factory_Control"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "EVENT_LOG"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ts": "={{ $now }}",
+            "agent": "analyze",
+            "input": "={{ $node[\"Google Drive — Upload File (to GOLD folder)\"].json[\"name\"] }}",
+            "output": "={{$node[\"Google Drive — Upload File (to GOLD folder)\"].json[\"webViewLink\"]}}",
+            "status": "success",
+            "action": "compute_kpis",
+            "notes": "Unified KPI CSV file generated and uploaded to GOLD folder"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ts",
+              "displayName": "ts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "agent",
+              "displayName": "agent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "input",
+              "displayName": "input",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "output",
+              "displayName": "output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [3776, 1344],
+      "id": "append_event_log",
+      "name": "Google Sheets — Append EVENT_LOG (analyze_success)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "ANALYZE Agent - Independent Workflow",
+        "height": 768,
+        "width": 3248
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [752, 896],
+      "typeVersion": 1,
+      "id": "sticky_note",
+      "name": "Sticky Note"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Google Drive — List Files (CLEAN folder)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive — List Files (CLEAN folder)": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches — FOR EACH CLEAN FILE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches — FOR EACH CLEAN FILE": {
+      "main": [
+        [
+          {
+            "node": "Function Node — Compute KPIs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Google Drive — Download CLEAN file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive — Download CLEAN file": {
+      "main": [
+        [
+          {
+            "node": "Switch — File Type (by mimeType)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch — File Type (by mimeType)": {
+      "main": [
+        [
+          {
+            "node": "Extract from CSV File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from JSON File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Split In Batches — FOR EACH CLEAN FILE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from CSV File": {
+      "main": [
+        [
+          {
+            "node": "Merge — Structured Data (CSV + JSON Rows)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from JSON File": {
+      "main": [
+        [
+          {
+            "node": "Merge — Structured Data (CSV + JSON Rows)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge — Structured Data (CSV + JSON Rows)": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches — FOR EACH CLEAN FILE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Function Node — Compute KPIs": {
+      "main": [
+        [
+          {
+            "node": "Convert to CSV File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to CSV File": {
+      "main": [
+        [
+          {
+            "node": "Google Drive — Upload File (to GOLD folder)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive — Upload File (to GOLD folder)": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets — Append EVENT_LOG (analyze_success)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}
